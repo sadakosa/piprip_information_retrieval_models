@@ -2,5 +2,5 @@ env/
 config/config.yaml
 
 resources/*
-!/resources/objects/
-/resources/objects/*
+!/resources/test_data/
+!/resources/test_data/*
