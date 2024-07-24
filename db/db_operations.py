@@ -35,7 +35,7 @@ def get_all_co_citations(db_client):
     return cursor.fetchall()
 
 # returns [['ss_id_one', 'ss_id_two', 'bibliographic_coupling_count'], ...]
-def get_all_bibliographic_couples(db_client, target_ss_id):
+def get_all_bibliographic_couples(db_client):
     query = """
     SELECT LEAST(r1.ss_id, r2.ss_id) AS paper1, GREATEST(r1.ss_id, r2.ss_id) AS paper2, COUNT(*) AS coupling_count
     FROM "references" r1

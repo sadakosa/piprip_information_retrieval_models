@@ -1,13 +1,12 @@
 from global_methods import load_yaml_config, save_to_json, load_json, save_bm25, load_bm25
 from global_methods import save_to_csv, load_from_csv, load_dataframe_from_list
 import tokeniser as tk
-from resources.objects.paper import Paper
 
 from db.db_client import DBClient
 from db import db_operations
 
 from bm25 import run_bm25
-from citation_similarity import get_full_citation_similarity, get_inmoment_citation_similarity
+from citation_similarity import get_full_citation_similarity
 
 def setup_db():
     config = load_yaml_config('config/config.yaml')
@@ -31,25 +30,34 @@ def setup_db():
 def main():
     dbclient, dbclient_read = setup_db()
     data = db_operations.get_all_paper_ids(dbclient_read)    
-    data_df = load_dataframe_from_list(data, ["ss_id", "title", "abstract"])
-    save_to_csv(data_df, "raw_papers", "")
+    raw_papers_df = load_dataframe_from_list(data, ["ss_id", "title", "abstract"])
+    # save_to_csv(data_df, "raw_papers", "")
 
-    data_df = load_from_csv("raw_papers", "")
-    ss_ids = load_json("ss_ids", "test_data")
+    raw_papers_df = load_from_csv("raw_papers", "")
+    # target_ss_ids = load_json("ss_ids", "test_data")
+    target_ss_ids = load_json("ss_ids_large", "test_data")
+    target_ss_id = target_ss_ids[0]
+
+    chunk_size = 10000
 
     # ================== Citation Similarity ==================
-    # get_full_citation_similarity(dbclient, ss_id)
+    get_full_citation_similarity(dbclient, target_ss_ids, chunk_size)
     # get_inmoment_citation_similarity(dbclient, ss_id)
     
 
     # ================== BM25 ==================
-    query = "deep learning in healthcare"
     title_weight = 0.6
     abstract_weight = 0.4
-    # run_bm25(raw_papers, queries, title_weight, abstract_weight)
-    import bm25_test 
-    # bm25_test.run_bm25(raw_papers, query, title_weight, abstract_weight)
-    bm25_test.run_bm25(dbclient, data_df, ss_ids, title_weight, abstract_weight)
+
+    run_bm25(dbclient, raw_papers_df, chunk_size, target_ss_ids, title_weight, abstract_weight)
+
+    # ================== Produce Graph ==================
+    # produce graph based on citation similarity and bm25 results
+    # produce graph based on citation similarity 
+
+    # ================== Evaluation ==================
+    
+
 
 if __name__ == "__main__":
     main()
