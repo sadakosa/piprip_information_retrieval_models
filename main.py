@@ -1,12 +1,11 @@
 from global_methods import load_yaml_config, save_to_json, load_json, save_bm25, load_bm25
-from bm25 import initialize_bm25, run_bm25_query # Importing all the functions from bm25.py
+from bm25 import run_bm25
 from tokeniser import tokenise_papers, clean_and_tokenise
 
 from db.db_client import DBClient
 from db import db_operations
 
 
-# main function
 
 def setup_db():
     config = load_yaml_config('config/config.yaml')
@@ -25,43 +24,29 @@ def setup_db():
     return dbclient, dbclient_read
 
 
-def formatting_data(papers):
-    titles = [paper['title_tokens'] for paper in papers]
-    abstracts = [paper['abstract_tokens'] for paper in papers]
-    papers_formatted = titles + abstracts
-    return papers_formatted
 
 
 def main():
-    # Setup the database
     dbclient, dbclient_read = setup_db()
 
-    # Load the data
     data = db_operations.get_all_paper_ids(dbclient_read)
-    # print(data[0])
+    # data = [
+    #     ["ss_id_1", "Deep Learning Approaches in Natural Language Processing", 
+    #     "Deep learning techniques have revolutionized natural language processing (NLP) by providing powerful models capable of handling complex language tasks. This paper reviews the state-of-the-art deep learning methods applied to NLP tasks such as text classification, sentiment analysis, and machine translation. Various architectures like RNNs, CNNs, and Transformers are discussed, highlighting their advantages and limitations."],
+    #     ["ss_id_2", "The Impact of Climate Change on Global Agriculture", 
+    #     "Climate change poses a significant threat to global agriculture by altering weather patterns, affecting crop yields, and increasing the frequency of extreme weather events. This study examines the potential impacts of climate change on agricultural productivity and proposes adaptive strategies to mitigate these effects. The role of sustainable agricultural practices and technological innovations in enhancing resilience to climate change is also explored."],
+    #     ["ss_id_3", "Quantum Computing: Advances and Applications", 
+    #     "Quantum computing is an emerging field that leverages the principles of quantum mechanics to perform computations far beyond the capabilities of classical computers. This paper provides an overview of recent advances in quantum computing, including developments in quantum algorithms, error correction, and hardware implementations. The potential applications of quantum computing in cryptography, material science, and complex system simulations are also discussed."],
+    #     ["ss_id_4", "The Role of Microbiome in Human Health and Disease", 
+    #     "The human microbiome, comprising trillions of microorganisms living in and on our bodies, plays a crucial role in maintaining health and influencing disease states. This review highlights the latest research on the composition and function of the human microbiome, its interactions with the host, and its impact on conditions such as obesity, diabetes, and inflammatory bowel disease. Potential therapeutic interventions targeting the microbiome are also considered."]
+    # ]
 
-    # Clean and tokenize the data
-    papers = tokenise_papers(data)
-    save_to_json(papers, "test", "tokenised_text")
+    ss_id = "4c75b748911ddcd888c5122f7672f69caa5d661f"
 
-    # Preprocess the data
-    papers_formatted = formatting_data(papers)
-    bm25 = initialize_bm25(papers_formatted)
-    # save_bm25(bm25, "bm25")
-
-    # run the query
     query = "deep learning in healthcare"
-    scores = run_bm25_query(bm25, query) # scores = [0.14708367, 0.14708367, 0.08984029, 0.11154667]
-    results = [{"paper": paper, "score": score} for paper, score in zip(papers_formatted, scores)]
-
-    # # Print results
-    # for result in results:
-    #     print(f"Paper: {result['paper']}, Score: {result['score']}")
-    
-    # Save the data
-    save_to_json(results, "results_one", "results")
-
-    return
+    title_weight = 0.6
+    abstract_weight = 0.4
+    run_bm25(data, query, title_weight, abstract_weight)
 
 if __name__ == "__main__":
     main()

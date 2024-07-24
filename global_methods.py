@@ -9,14 +9,16 @@ def load_yaml_config(file_path):
 
 import pickle
 def save_bm25(bm25, file_path):
+    file_path = './resources/bm25/' + file_path + '.pkl'
     with open(file_path, 'wb') as f:
         pickle.dump(bm25, f)
 
 def load_bm25(file_path):
+    file_path = './resources/bm25/' + file_path + '.pkl'
     with open(file_path, 'rb') as f:
         bm25 = pickle.load(f)
     return bm25
-    
+
 # ====================================================================================================
 # Save to Json Functions
 # ====================================================================================================
