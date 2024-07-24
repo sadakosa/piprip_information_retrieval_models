@@ -17,20 +17,13 @@ nltk.download('stopwords')
 
 
 
-def tokenise_papers(untokenised_papers):
-    papers = []
+def tokenise_papers(raw_papers):
 
-    for untokenised_paper in untokenised_papers:
-        paper = {
-            "ss_id": untokenised_paper[0],
-            "title": untokenised_paper[1],
-            "abstract": untokenised_paper[2],
-            "title_tokens": clean_and_tokenise(untokenised_paper[1], "title"),
-            "abstract_tokens": clean_and_tokenise(untokenised_paper[2], "abstract", untokenised_paper[0])
-        }
-        papers.append(paper)
+    for paper in raw_papers:
+        paper.title_tokens = clean_and_tokenise(paper.title, "title")
+        paper.abstract_tokens = clean_and_tokenise(paper.abstract, "abstract", paper.ss_id)
     
-    return papers
+    return raw_papers
 
 
 

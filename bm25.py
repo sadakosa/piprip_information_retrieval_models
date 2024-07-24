@@ -15,10 +15,9 @@ from resources.objects.ranked_papers import RankedPapers
 # ====================================================================================================
 # MAIN BM25 FUNCTION
 # ====================================================================================================
-def run_bm25(data, query, title_weight, abstract_weight):
+def run_bm25(raw_papers, query, title_weight, abstract_weight):
     # Clean and tokenize the data
-    papers = tk.tokenise_papers(data)
-    papers = [Paper(p['ss_id'], p['title'], p['abstract'], p['title_tokens'], p['abstract_tokens']) for p in papers]
+    papers = tk.tokenise_papers(raw_papers)
     save_to_json([p.__dict__ for p in papers], "test", "tokenised_text")
 
     # Preprocess the data
@@ -42,9 +41,8 @@ def run_bm25(data, query, title_weight, abstract_weight):
         ranked_papers.add_paper(paper)
 
     ranked_papers.rank_papers_by_score(combined_scores)
-    save_to_json([p.__dict__ for p in ranked_papers.papers], "ranked_papers_one", "results")
-    print("top 5 papers: ", ranked_papers.papers[:5])
-    
+    save_to_json([p.__dict__ for p in ranked_papers.papers], "ranked_papers_two", "results")
+    print("top 5 papers: ", ranked_papers.get_papers_by_bm25_rank()[:5])    
     return ranked_papers
 
 
