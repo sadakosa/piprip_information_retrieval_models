@@ -1,3 +1,6 @@
 env/
 config/config.yaml
+
 resources/*
+!/resources/objects/
+/resources/objects/*
