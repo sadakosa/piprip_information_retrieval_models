@@ -29,7 +29,8 @@ BERT is a deep learning model developed by Google that has revolutionized natura
 ## On BM25
 https://pypi.org/project/rank-bm25/
 
-
+- to save the tokenised papers in resources under 'tokenised_scientific.txt' or whatever
+- 
 
 ## On Bert
 

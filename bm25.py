@@ -1,74 +1,32 @@
+# to run algorithms related to bm25 search
 import nltk
-from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
 import string
 import pandas as pd
+from rank_bm25 import BM25Okapi
+from tokeniser import clean_and_tokenise
 
-# Ensure you have the necessary NLTK data files
-nltk.download('punkt')
-nltk.download('stopwords')
-
-# Example abstracts and titles
-documents = [
-    {"title": "Deep Learning for NLP", "abstract": "This paper explores the use of deep learning techniques in natural language processing..."},
-    {"title": "Machine Learning in Healthcare", "abstract": "The application of machine learning in healthcare has been growing rapidly..."}
-]
-
-# Preprocessing function
-def preprocess_text(text):
-    # Convert to lowercase
-    text = text.lower()
-    # Remove punctuation and numbers
-    text = text.translate(str.maketrans('', '', string.punctuation + string.digits))
-    # Tokenize
-    tokens = word_tokenize(text)
-    # Remove stopwords
-    stop_words = set(stopwords.words('english'))
-    tokens = [word for word in tokens if word not in stop_words]
-
-    print("tokens: ", tokens)
-    return tokens
-
-# Apply preprocessing to abstracts and titles
-for doc in documents:
-    doc['title_tokens'] = preprocess_text(doc['title'])
-    doc['abstract_tokens'] = preprocess_text(doc['abstract'])
 
 # Prepare data for BM25
-titles = [doc['title_tokens'] for doc in documents]
-abstracts = [doc['abstract_tokens'] for doc in documents]
+def initialize_bm25(papers):
+    bm25 = BM25Okapi(papers)
+    return bm25
 
-print("titles: ", titles)
-print("abstracts: ", abstracts)
-# Example of how to use BM25
-from rank_bm25 import BM25Okapi
+def run_bm25_query(bm25, query):
+    query_tokens = clean_and_tokenise(query, "query")
+    scores = bm25.get_scores(query_tokens)
+    return scores
 
-# Combine titles and abstracts
-all_documents = titles + abstracts
+def rank_documents():
+    # Rank documents by scores in descending order
+    ranked_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)
+    ranked_docs = [corpus[i] for i in ranked_indices]
+    ranked_scores = [scores[i] for i in ranked_indices]
 
-# Initialize BM25
-bm25 = BM25Okapi(all_documents)
+    # Output ranked documents and their scores
+    for doc, score in zip(ranked_docs, ranked_scores):
+        print(f"Document: {doc} \nScore: {score}\n")
 
-# Example query
-query = "deep learning in healthcare"
-query_tokens = preprocess_text(query)
-
-# Get BM25 scores
-scores = bm25.get_scores(query_tokens)
-
-# Print results
-print(scores)
-
-
-# Combine titles and abstracts
-all_documents = titles + abstracts
-
-# BM25 scores
-scores = [0.14708367, 0.14708367, 0.08984029, 0.11154667]
-
-# Map scores to documents
-results = [{"document": doc, "score": score} for doc, score in zip(all_documents, scores)]
-
-# Print results
-for result in results:
-    print(f"Document: {result['document']}, Score: {result['score']}")
+    # Get the highest score
+    highest_score = ranked_scores[0]
+    highest_ranked_doc = ranked_docs[0]
+    print(f"Highest Ranked Document: {highest_ranked_doc} \nHighest Score: {highest_score}")
