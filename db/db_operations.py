@@ -10,7 +10,15 @@ def get_all_paper_ids(db_client):
     cursor = db_client.execute(select_query)
     return cursor.fetchall()
 
-
+def get_papers_by_ss_ids(db_client, ss_ids):
+    select_query = """
+    SELECT ss_id, clean_title, clean_abstract FROM papers
+    WHERE ss_id IN %s 
+    AND clean_title IS NOT NULL
+    AND clean_abstract IS NOT NULL;
+    """
+    cursor = db_client.execute(select_query, (tuple(ss_ids),))
+    return cursor.fetchall()
 
 
 # ======================== CITATION SIMILARITY OPERATIONS ========================

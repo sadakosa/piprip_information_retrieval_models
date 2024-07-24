@@ -16,18 +16,28 @@ nltk.download('stopwords')
 # ]
 
 
+# old for paper object
+# def tokenise_papers(raw_papers):
 
-def tokenise_papers(raw_papers):
-
-    for paper in raw_papers:
-        paper.title_tokens = clean_and_tokenise(paper.title, "title")
-        paper.abstract_tokens = clean_and_tokenise(paper.abstract, "abstract", paper.ss_id)
+#     for paper in raw_papers:
+#         paper.title_tokens = clean_and_tokenise(paper.title, "title")
+#         paper.abstract_tokens = clean_and_tokenise(paper.abstract, "abstract", paper.ss_id)
     
-    return raw_papers
+#     return raw_papers
 
+def tokenise_papers_df(raw_papers_df):
+    print(raw_papers_df['title'][0])
+    raw_papers_df['title_tokens'] = raw_papers_df['title'].apply(lambda x: clean_and_tokenise(x, "title"))
+    raw_papers_df['abstract_tokens'] = raw_papers_df['abstract'].apply(lambda x: clean_and_tokenise(x, "abstract"))
+    return raw_papers_df
 
 
 def clean_and_tokenise(text, text_type, ss_id=None):
+    if not isinstance(text, str):
+        # print("text: ", text)
+        # print("text_type: ", text_type)
+        return []
+
     if text_type == "abstract" and text == "no abstract available" or text == "No abstract available":
         # print("ss_id: ", ss_id) 
         return "" # for papers without abstracts, will put more weight into title

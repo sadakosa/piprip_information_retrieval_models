@@ -92,5 +92,10 @@ def load_dataframe_from_list(data, column_names):
     Returns:
     pandas.DataFrame: The created DataFrame.
     """
+    # Ensure the data structure is correct
+    for row in data:
+        if len(row) != len(column_names):
+            raise ValueError("Each row in the data must have the same number of elements as there are column names.")
+    
     df = pd.DataFrame(data, columns=column_names)
     return df
