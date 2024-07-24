@@ -33,8 +33,8 @@ def save_to_json(data, file_name, folder_name):
     with open(file_path, 'w') as f:
         json.dump(data, f)
 
-def load_json(file_name):
-    file_path = './resources/' + file_name + '.json'
+def load_json(file_name, folder_name):
+    file_path = './resources/' + folder_name + '/' + file_name + '.json'
     if os.path.exists(file_path):
         with open(file_path, 'r') as f:
             data = json.load(f)
