@@ -6,7 +6,7 @@ from db.db_client import DBClient
 from db import db_operations
 
 from bm25 import run_bm25
-from citation_similarity import get_citation_similarity
+from citation_similarity import get_full_citation_similarity, get_inmoment_citation_similarity
 
 def setup_db():
     config = load_yaml_config('config/config.yaml')
@@ -42,18 +42,21 @@ def main():
     #     "The human microbiome, comprising trillions of microorganisms living in and on our bodies, plays a crucial role in maintaining health and influencing disease states. This review highlights the latest research on the composition and function of the human microbiome, its interactions with the host, and its impact on conditions such as obesity, diabetes, and inflammatory bowel disease. Potential therapeutic interventions targeting the microbiome are also considered."]
     # ]
     raw_papers = [Paper(ss_id, title, abstract) for ss_id, title, abstract in data]
-
-
+    ss_ids = ["068da11d1dc1252c3ab133ae2878f43a1b3c63ea"]
     # ss_ids = load_json("ss_ids", "test_data")
-    # for ss_id in ss_ids:
-    #     get_citation_similarity(dbclient, ss_id)
-    ss_id = "ss_id_1"
-    get_citation_similarity(dbclient, ss_id)
+
+
     
-    # query = "deep learning in healthcare"
-    # title_weight = 0.6
-    # abstract_weight = 0.4
-    # run_bm25(raw_papers, query, title_weight, abstract_weight)
+    # get_full_citation_similarity(dbclient, ss_id)
+    # get_inmoment_citation_similarity(dbclient, ss_id)
+    
+    query = "deep learning in healthcare"
+    title_weight = 0.6
+    abstract_weight = 0.4
+    # run_bm25(raw_papers, queries, title_weight, abstract_weight)
+    import bm25_test 
+    bm25_test.run_bm25(raw_papers, query, title_weight, abstract_weight)
+    # bm25_test.run_bm25(raw_papers, ss_ids, title_weight, abstract_weight)
 
 if __name__ == "__main__":
     main()

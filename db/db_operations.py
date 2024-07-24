@@ -11,15 +11,17 @@ def get_all_paper_ids(db_client):
     return cursor.fetchall()
 
 
+
+
 # ======================== CITATION SIMILARITY OPERATIONS ========================
 
 # returns [['ss_id_one', 'ss_id_two', 'co_citation_count'], ...]
 def get_all_co_citations(db_client):
     query = """
-    SELECT r1.reference_id AS paper1, r2.reference_id AS paper2, COUNT(*) AS co_citation_count
+    SELECT LEAST(r1.reference_id, r2.reference_id) AS paper1, GREATEST(r1.reference_id, r2.reference_id) AS paper2, COUNT(*) AS co_citation_count
     FROM "references" r1
     JOIN "references" r2 ON r1.ss_id = r2.ss_id AND r1.reference_id <> r2.reference_id
-    GROUP BY r1.reference_id, r2.reference_id;
+    GROUP BY LEAST(r1.reference_id, r2.reference_id), GREATEST(r1.reference_id, r2.reference_id);
     """
     cursor = db_client.execute(query)
     return cursor.fetchall()
@@ -27,10 +29,10 @@ def get_all_co_citations(db_client):
 # returns [['ss_id_one', 'ss_id_two', 'bibliographic_coupling_count'], ...]
 def get_all_bibliographic_couples(db_client, target_ss_id):
     query = """
-    SELECT r1.ss_id AS paper1, r2.ss_id AS paper2, COUNT(*) AS coupling_count
+    SELECT LEAST(r1.ss_id, r2.ss_id) AS paper1, GREATEST(r1.ss_id, r2.ss_id) AS paper2, COUNT(*) AS coupling_count
     FROM "references" r1
     JOIN "references" r2 ON r1.reference_id = r2.reference_id AND r1.ss_id <> r2.ss_id
-    GROUP BY r1.ss_id, r2.ss_id;
+    GROUP BY LEAST(r1.ss_id, r2.ss_id), GREATEST(r1.ss_id, r2.ss_id);
     """
     cursor = db_client.execute(query)
     return cursor.fetchall()

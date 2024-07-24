@@ -67,3 +67,30 @@ def load_json(file_name, folder_name):
 #             # Append each row to the data array
 #             search_terms.append(row)
 #     return search_terms
+
+import pandas as pd
+
+def save_to_csv(df, file_name, folder_name):
+    file_path = './resources/' + folder_name + '/' + file_name + '.csv'
+    df.to_csv(file_path, index=False)
+    print(f"DataFrame saved to {file_path}")
+
+def load_from_csv(file_name, folder_name):
+    file_path = './resources/' + folder_name + '/' + file_name + '.csv'
+    df = pd.read_csv(file_path)
+    print(f"DataFrame loaded from {file_path}")
+    return df
+
+def load_dataframe_from_list(data, column_names):
+    """
+    Load a pandas DataFrame from a list of lists.
+
+    Parameters:
+    data (list of lists): The data to load into the DataFrame.
+    column_names (list of str): The names of the columns for the DataFrame.
+
+    Returns:
+    pandas.DataFrame: The created DataFrame.
+    """
+    df = pd.DataFrame(data, columns=column_names)
+    return df
