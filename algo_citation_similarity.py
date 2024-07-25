@@ -149,7 +149,7 @@ def get_full_citation_similarity(db_client, chunk_size):
     combined_df = pd.merge(co_citation_df, bibliographic_coupling_df, on=["paper1", "paper2"], how="outer").fillna(0)
     combined_df.rename(columns={"paper1": "paper_id_one", "paper2": "paper_id_two", "co_citation_count": "co_citation_score", "coupling_count": "coupling_score"}, inplace=True)
     
-    save_to_csv(combined_df, "ranked_papers_with_scores_citation_similarity", "results")
+    save_to_csv(combined_df, "paper_paper_citation_similarity", "citation_similarity")
 
     save_to_csv_run_time = time.time() - time_start
     print(f"Save to CSV runtime: {save_to_csv_run_time}")
