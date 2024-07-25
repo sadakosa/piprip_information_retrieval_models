@@ -37,12 +37,16 @@ def main():
     raw_papers_df = load_from_csv("raw_papers", "")
     target_ss_ids = load_json("ss_ids", "test_data")
     # target_ss_ids = load_json("ss_ids_large", "test_data")
-    target_ss_id = target_ss_ids[0]
+    # target_ss_id = target_ss_ids[0]
 
     chunk_size = 10000
 
     # ================== Citation Similarity ==================
-    # get_full_citation_similarity(dbclient, target_ss_ids, chunk_size)
+    db_operations.create_citation_similarity_table(dbclient)
+    get_full_citation_similarity(dbclient, chunk_size)
+
+    # load_from_csv("results", "citation_similarity")
+    # db_operations.batch_insert_citation_similarity(dbclient, "citation_similarity", "results")
     # get_inmoment_citation_similarity(dbclient, ss_id)
     
 
@@ -55,7 +59,7 @@ def main():
     # ================== Produce Graph ==================
     # produce graph based on citation similarity and bm25 results
     # produce graph based on citation similarity 
-    generate_graphs(dbclient, target_ss_ids)
+    # generate_graphs(dbclient, target_ss_ids)
 
     # ================== Evaluation ==================
     

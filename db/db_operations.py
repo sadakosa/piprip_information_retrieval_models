@@ -98,3 +98,29 @@ def get_co_citation(db_client, target_ss_id):
     """
     cursor = db_client.execute(query, (target_ss_id,))
     return cursor.fetchall()
+
+# ======================== CITATION SIMILARITY CREATE AND INSERT ========================
+
+def create_citation_similarity_table(db_client):
+    create_query = """
+    CREATE TABLE IF NOT EXISTS citation_similarity (
+        ss_id TEXT NOT NULL,
+        similar_paper TEXT NOT NULL,
+        co_citation_count INT NOT NULL,
+        bibliographic_coupling_count INT NOT NULL,
+        PRIMARY KEY (ss_id, similar_paper),
+        FOREIGN KEY (ss_id) REFERENCES papers(ss_id),
+        FOREIGN KEY (similar_paper) REFERENCES papers(ss_id)
+    );
+    """
+    db_client.execute(create_query)
+    return
+
+def batch_insert_citation_similarity(db_client, citation_similarities): # citation_similarities = [(ss_id, similar_paper, co_citation_count, bibliographic_coupling_count), ...]
+    insert_query = """
+    INSERT INTO citation_similarity (ss_id, similar_paper, co_citation_count, bibliographic_coupling_count)
+    FROM (VALUES %s) AS v(ss_id, similar_paper, co_citation_count, bibliographic_coupling_count)
+    ON CONFLICT (ss_id, similar_paper) DO NOTHING;
+    """
+    db_client.execute(insert_query, citation_similarities)
+    return

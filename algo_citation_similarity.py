@@ -1,57 +1,167 @@
 from db import db_operations
 from global_methods import save_to_csv, load_from_csv, load_dataframe_from_list
 import pandas as pd
+import time
+import numpy as np
 
 # ====================================================================================================
 # Full Citation Similarity
 # ====================================================================================================
 
+def create_citation_similarity_tables(db_client):
+    
 
-def get_full_citation_similarity(db_client, target_ss_ids, chunk_size):
+    return
+
+# def get_full_citation_similarity(db_client, target_ss_ids, chunk_size):
+#     # Get all co-citations and bibliographic couples
+#     co_citation_data = db_operations.get_all_co_citations(db_client)
+#     bibliographic_coupling_data = db_operations.get_all_bibliographic_couples(db_client)
+
+#     # Load data into DataFrames
+#     co_citation_df = load_dataframe_from_list(co_citation_data, ["paper1", "paper2", "co_citation_count"])
+#     bibliographic_coupling_df = load_dataframe_from_list(bibliographic_coupling_data, ["paper1", "paper2", "coupling_count"])
+
+#     all_related_papers_list = []
+
+#     # Process data in chunks
+#     for start in range(0, len(target_ss_ids), chunk_size):
+#         chunk_ss_ids = target_ss_ids[start:start + chunk_size]
+
+#         for ss_id in chunk_ss_ids:
+#             related_papers_df = full_citation_similarity_ranking(co_citation_df, bibliographic_coupling_df, ss_id)
+            
+#             ss_id_column = f"{ss_id}_ss_id"
+#             score_column = f"{ss_id}_score"
+#             related_papers_df.rename(columns={"ss_id": ss_id_column, "combined_score": score_column}, inplace=True)
+
+#             related_papers_df.reset_index(drop=True, inplace=True)  # Reset index to ensure proper alignment during concatenation
+#             all_related_papers_list.append(related_papers_df)
+
+#     all_related_papers_df = pd.concat(all_related_papers_list, axis=1)
+#     save_to_csv(all_related_papers_df, "ranked_papers_with_scores_citation_similarity", "results")
+
+#     return all_related_papers_df
+
+
+
+# def full_citation_similarity_ranking(co_citation_df, bibliographic_coupling_df, ss_id):
+#     combined_df = pd.merge(co_citation_df, bibliographic_coupling_df, on=["paper1", "paper2"], how="outer").fillna(0)
+#     combined_df["combined_score"] = combined_df["co_citation_count"] + combined_df["coupling_count"]  # Calculate the combined score
+
+#     related_papers = combined_df[(combined_df["paper1"] == ss_id) | (combined_df["paper2"] == ss_id)]  # Get the related papers
+#     related_papers = related_papers.sort_values(by="combined_score", ascending=False)  # Sort the related papers by combined score
+
+#     related_papers_df = pd.DataFrame({
+#         "ss_id": related_papers.apply(lambda row: row["paper2"] if row["paper1"] == ss_id else row["paper1"], axis=1),
+#         "combined_score": related_papers["combined_score"]
+#     })
+
+#     return related_papers_df
+
+
+
+
+
+
+# def get_full_citation_similarity(db_client, chunk_size):
+
+#     # Get all co-citations and bibliographic couples
+#     co_citation_data = db_operations.get_all_co_citations(db_client)
+#     bibliographic_coupling_data = db_operations.get_all_bibliographic_couples(db_client)
+
+#     # Load data into DataFrames
+#     co_citation_df = load_dataframe_from_list(co_citation_data, ["paper1", "paper2", "co_citation_count"])
+#     bibliographic_coupling_df = load_dataframe_from_list(bibliographic_coupling_data, ["paper1", "paper2", "bibliographic_coupling_count"])
+
+#     all_paper_ids = db_operations.get_all_paper_ids(db_client)
+#     all_related_papers_list = []
+
+#     # Process data in chunks
+#     for start in range(0, len(all_paper_ids), chunk_size):
+#         chunk_paper_ids = all_paper_ids[start:start + chunk_size]
+
+#         for paper_id in chunk_paper_ids:
+#             related_papers_df = full_citation_similarity_ranking(co_citation_df, bibliographic_coupling_df, paper_id)
+            
+#             paper_id_column = f"{paper_id}_paper_id"
+#             score_column = f"{paper_id}_score"
+#             related_papers_df.rename(columns={"paper_id": paper_id_column, "combined_score": score_column}, inplace=True)
+
+#             related_papers_df.reset_index(drop=True, inplace=True)  # Reset index to ensure proper alignment during concatenation
+#             all_related_papers_list.append(related_papers_df)
+
+#     all_related_papers_df = pd.concat(all_related_papers_list, axis=1)
+#     save_to_csv(all_related_papers_df, "ranked_papers_with_scores_citation_similarity", "results")
+
+#     return all_related_papers_df
+
+
+# def full_citation_similarity_ranking(co_citation_df, bibliographic_coupling_df, paper_id):
+#     combined_df = pd.merge(co_citation_df, bibliographic_coupling_df, on=["paper1", "paper2"], how="outer").fillna(0)
+#     combined_df["combined_score"] = combined_df["co_citation_count"] + combined_df["coupling_count"]  # Calculate the combined score
+
+#     related_papers = combined_df[(combined_df["paper1"] == paper_id) | (combined_df["paper2"] == paper_id)]  # Get the related papers
+#     related_papers = related_papers.sort_values(by="combined_score", ascending=False)  # Sort the related papers by combined score
+
+#     related_papers_df = pd.DataFrame({
+#         "paper_id": related_papers.apply(lambda row: row["paper2"] if row["paper1"] == paper_id else row["paper1"], axis=1),
+#         "combined_score": related_papers["combined_score"]
+#     })
+
+#     return related_papers_df
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def get_full_citation_similarity(db_client, chunk_size):
+    time_start = time.time()
     # Get all co-citations and bibliographic couples
     co_citation_data = db_operations.get_all_co_citations(db_client)
     bibliographic_coupling_data = db_operations.get_all_bibliographic_couples(db_client)
 
-    # Load data into DataFrames
     co_citation_df = load_dataframe_from_list(co_citation_data, ["paper1", "paper2", "co_citation_count"])
     bibliographic_coupling_df = load_dataframe_from_list(bibliographic_coupling_data, ["paper1", "paper2", "coupling_count"])
 
-    all_related_papers_list = []
+    finding_similarities_runtime = time.time() - time_start
+    print(f"Finding similarities runtime: {finding_similarities_runtime}")
 
-    # Process data in chunks
-    for start in range(0, len(target_ss_ids), chunk_size):
-        chunk_ss_ids = target_ss_ids[start:start + chunk_size]
+    # Sort paper IDs in each row to ensure uniqueness
+    co_citation_df[['paper1', 'paper2']] = pd.DataFrame(np.sort(co_citation_df[['paper1', 'paper2']], axis=1), index=co_citation_df.index)
+    bibliographic_coupling_df[['paper1', 'paper2']] = pd.DataFrame(np.sort(bibliographic_coupling_df[['paper1', 'paper2']], axis=1), index=bibliographic_coupling_df.index)
+    co_citation_df = co_citation_df.drop_duplicates(subset=['paper1', 'paper2'])
+    bibliographic_coupling_df = bibliographic_coupling_df.drop_duplicates(subset=['paper1', 'paper2'])
 
-        for ss_id in chunk_ss_ids:
-            related_papers_df = full_citation_similarity_ranking(co_citation_df, bibliographic_coupling_df, ss_id)
-            
-            ss_id_column = f"{ss_id}_ss_id"
-            score_column = f"{ss_id}_score"
-            related_papers_df.rename(columns={"ss_id": ss_id_column, "combined_score": score_column}, inplace=True)
-
-            related_papers_df.reset_index(drop=True, inplace=True)  # Reset index to ensure proper alignment during concatenation
-            all_related_papers_list.append(related_papers_df)
-
-    all_related_papers_df = pd.concat(all_related_papers_list, axis=1)
-    save_to_csv(all_related_papers_df, "ranked_papers_with_scores_citation_similarity", "results")
-
-    return all_related_papers_df
-
-
-
-def full_citation_similarity_ranking(co_citation_df, bibliographic_coupling_df, ss_id):
+    # Save to CSV
     combined_df = pd.merge(co_citation_df, bibliographic_coupling_df, on=["paper1", "paper2"], how="outer").fillna(0)
-    combined_df["combined_score"] = combined_df["co_citation_count"] + combined_df["coupling_count"]  # Calculate the combined score
+    combined_df.rename(columns={"paper1": "paper_id_one", "paper2": "paper_id_two", "co_citation_count": "co_citation_score", "coupling_count": "coupling_score"}, inplace=True)
+    
+    save_to_csv(combined_df, "ranked_papers_with_scores_citation_similarity", "results")
 
-    related_papers = combined_df[(combined_df["paper1"] == ss_id) | (combined_df["paper2"] == ss_id)]  # Get the related papers
-    related_papers = related_papers.sort_values(by="combined_score", ascending=False)  # Sort the related papers by combined score
+    save_to_csv_run_time = time.time() - time_start
+    print(f"Save to CSV runtime: {save_to_csv_run_time}")
 
-    related_papers_df = pd.DataFrame({
-        "ss_id": related_papers.apply(lambda row: row["paper2"] if row["paper1"] == ss_id else row["paper1"], axis=1),
-        "combined_score": related_papers["combined_score"]
-    })
+    return combined_df
 
-    return related_papers_df
+
+
+
+
+
+
 
 
 # ====================================================================================================
