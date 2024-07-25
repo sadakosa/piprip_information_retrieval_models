@@ -103,11 +103,11 @@ def get_co_citation(db_client, target_ss_id):
 
 def create_citation_similarity_table(db_client):
     create_query = """
-    CREATE TABLE IF NOT EXISTS citation_similarity (
+    CREATE TABLE IF NOT EXISTS citation_similarity(
         ss_id TEXT NOT NULL,
         similar_paper TEXT NOT NULL,
-        co_citation_count INT NOT NULL,
-        bibliographic_coupling_count INT NOT NULL,
+        co_citation_count NUMERIC NOT NULL,
+        bibliographic_coupling_count NUMERIC NOT NULL,
         PRIMARY KEY (ss_id, similar_paper),
         FOREIGN KEY (ss_id) REFERENCES papers(ss_id),
         FOREIGN KEY (similar_paper) REFERENCES papers(ss_id)
@@ -116,11 +116,48 @@ def create_citation_similarity_table(db_client):
     db_client.execute(create_query)
     return
 
-def batch_insert_citation_similarity(db_client, citation_similarities): # citation_similarities = [(ss_id, similar_paper, co_citation_count, bibliographic_coupling_count), ...]
+# def batch_insert_citation_similarity(db_client, citation_similarities, chunk_size): # citation_similarities = [(ss_id, similar_paper, co_citation_count, bibliographic_coupling_count), ...]
+#     insert_query = """
+#     INSERT INTO citation_similarity (ss_id, similar_paper, co_citation_count, bibliographic_coupling_count)
+#     VALUES %s
+#     ON CONFLICT (ss_id, similar_paper) DO NOTHING;
+#     """
+#     # print("Sample of citation_similarities:", citation_similarities[:5])
+
+#     # Using psycopg2's execute_values to handle batch inserts
+#     from psycopg2.extras import execute_values
+#     for i in range(0, len(citation_similarities), chunk_size):
+#         chunk = citation_similarities[i:i+chunk_size]
+#         # print("Inserting chunk:", chunk[:5])
+#         execute_values(db_client.cur, insert_query, chunk)
+#     return
+
+
+from psycopg2.extras import execute_values
+def batch_insert_citation_similarity(db_client, logger, citation_similarities, chunk_size):
     insert_query = """
     INSERT INTO citation_similarity (ss_id, similar_paper, co_citation_count, bibliographic_coupling_count)
-    FROM (VALUES %s) AS v(ss_id, similar_paper, co_citation_count, bibliographic_coupling_count)
+    VALUES %s
     ON CONFLICT (ss_id, similar_paper) DO NOTHING;
     """
-    db_client.execute(insert_query, citation_similarities)
+
+
+    for i in range(0, len(citation_similarities), chunk_size):
+        chunk = citation_similarities[i:i+chunk_size]
+        print("len(chunk):", len(chunk))    
+        
+        # Debug: Check the structure of the current chunk
+        print(f"Inserting chunk {i//chunk_size + 1}/{-(-len(citation_similarities)//chunk_size)}: {chunk[:5]}")
+        logger.log_message(f"Inserting chunk {i//chunk_size + 1}/{-(-len(citation_similarities)//chunk_size)}: {chunk[:5]}")
+        # Inserting chunk: [('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e5e85b506969e276487458add9d75fe2d44b9188', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e6a7d2f8818052c0ef5272446654317d44a8a825', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e6e6acbd1067e448848cd48fde6de6c3b0edf82e', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e8aa63ae69334bc33135b0e0dd8066fd768215e9', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'eb8cdb317a51e0cfa913790f966baf988baaf49e', 2.0, 0.0)]
+        
+        try:
+            execute_values(db_client.cur, insert_query, chunk)
+            db_client.commit()  # Commit after each chunk insertion
+        except Exception as e:
+            print(f"Error inserting chunk {i//chunk_size + 1}: {e}")
+            logger.log_message(f"Error inserting chunk {i//chunk_size + 1}: {e}")
+    
+    print("Batch insertion complete.")
+    logger.log_message("Batch insertion complete.")
     return

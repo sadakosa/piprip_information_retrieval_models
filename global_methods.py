@@ -79,6 +79,7 @@ def load_from_csv(file_name, folder_name):
     file_path = './resources/' + folder_name + '/' + file_name + '.csv'
     df = pd.read_csv(file_path)
     print(f"DataFrame loaded from {file_path}")
+    
     return df
 
 def load_dataframe_from_list(data, column_names):

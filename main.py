@@ -1,13 +1,19 @@
 from global_methods import load_yaml_config, save_to_json, load_json, save_bm25, load_bm25
 from global_methods import save_to_csv, load_from_csv, load_dataframe_from_list
-import algo_tokeniser as tk
+from logger.logger import Logger
+
 
 from db.db_client import DBClient
 from db import db_operations
+import time
 
+import algo_tokeniser as tk
 from algo_bm25 import run_bm25
 from algo_citation_similarity import get_full_citation_similarity
 from algo_graph_generator import generate_graphs
+
+
+
 
 def setup_db():
     config = load_yaml_config('config/config.yaml')
@@ -29,6 +35,7 @@ def setup_db():
 
 
 def main():
+    logger = Logger()
     dbclient, dbclient_read = setup_db()
     # data = db_operations.get_all_paper_ids(dbclient_read)    
     # raw_papers_df = load_dataframe_from_list(data, ["ss_id", "title", "abstract"])
@@ -42,11 +49,39 @@ def main():
     chunk_size = 10000
 
     # ================== Citation Similarity ==================
-    db_operations.create_citation_similarity_table(dbclient)
-    get_full_citation_similarity(dbclient, chunk_size)
+    # db_operations.create_citation_similarity_table(dbclient)
+    # get_full_citation_similarity(dbclient, chunk_size)
 
-    # load_from_csv("results", "citation_similarity")
-    # db_operations.batch_insert_citation_similarity(dbclient, "citation_similarity", "results")
+    citation_similarities_df = load_from_csv(file_name="paper_paper_citation_similarity", folder_name="citation_similarity")
+    citation_similarities_df['co_citation_score'] = citation_similarities_df['co_citation_score'].astype(int)
+    citation_similarities_df['coupling_score'] = citation_similarities_df['coupling_score'].astype(int)
+    citation_similarities = list(citation_similarities_df.itertuples(index=False, name=None))
+    # print(citation_similarities)
+    print(type(citation_similarities))
+    print(len(citation_similarities))
+
+    # print("Sample of citation_similarities after conversion to tuples:", citation_similarities[:5])
+
+    time_start = time.time()
+
+    max_retries = 5
+    for attempt in range(max_retries):
+        try:
+            print(f"Attempt {attempt + 1} of batch insert")
+            db_operations.batch_insert_citation_similarity(dbclient, logger, citation_similarities, chunk_size)
+            break
+        except Exception as e:
+            print(f"Error during batch insert (attempt {attempt + 1}): {e}")
+            logger.log_message(f"Error during batch insert (attempt {attempt + 1}): {e}")
+            if attempt + 1 == max_retries:
+                print("Max retries reached. Exiting.")
+                logger.log_message("Max retries reached. Exiting.")
+                return
+
+    time_end = time.time()
+    runtime = time_end - time_start
+    print(f"Runtime: {runtime}")
+    logger.log_message(f"Runtime: {runtime}")
     # get_inmoment_citation_similarity(dbclient, ss_id)
     
 

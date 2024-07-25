@@ -4,3 +4,5 @@ config/config.yaml
 resources/*
 !/resources/test_data/
 !/resources/test_data/*
+
+/logger/logs/*
