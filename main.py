@@ -57,8 +57,8 @@ def main():
     citation_similarities_df['coupling_score'] = citation_similarities_df['coupling_score'].astype(int)
     citation_similarities = list(citation_similarities_df.itertuples(index=False, name=None))
     # print(citation_similarities)
-    print(type(citation_similarities))
-    print(len(citation_similarities))
+    # print(type(citation_similarities))
+    # print(len(citation_similarities))
 
     # print("Sample of citation_similarities after conversion to tuples:", citation_similarities[:5])
 
