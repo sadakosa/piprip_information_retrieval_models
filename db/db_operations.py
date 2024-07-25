@@ -29,8 +29,7 @@ def get_all_co_citations(db_client):
     SELECT LEAST(r1.reference_id, r2.reference_id) AS paper1, GREATEST(r1.reference_id, r2.reference_id) AS paper2, COUNT(*) AS co_citation_count
     FROM "references" r1
     JOIN "references" r2 ON r1.ss_id = r2.ss_id AND r1.reference_id <> r2.reference_id
-    GROUP BY LEAST(r1.reference_id, r2.reference_id), GREATEST(r1.reference_id, r2.reference_id)
-    LIMIT 10000;
+    GROUP BY LEAST(r1.reference_id, r2.reference_id), GREATEST(r1.reference_id, r2.reference_id);
     """
     cursor = db_client.execute(query)
     return cursor.fetchall()
@@ -41,8 +40,7 @@ def get_all_bibliographic_couples(db_client):
     SELECT LEAST(r1.ss_id, r2.ss_id) AS paper1, GREATEST(r1.ss_id, r2.ss_id) AS paper2, COUNT(*) AS coupling_count
     FROM "references" r1
     JOIN "references" r2 ON r1.reference_id = r2.reference_id AND r1.ss_id <> r2.ss_id
-    GROUP BY LEAST(r1.ss_id, r2.ss_id), GREATEST(r1.ss_id, r2.ss_id)
-    LIMIT 10000;
+    GROUP BY LEAST(r1.ss_id, r2.ss_id), GREATEST(r1.ss_id, r2.ss_id);
     """
     cursor = db_client.execute(query)
     return cursor.fetchall()
