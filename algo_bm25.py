@@ -3,7 +3,7 @@ import string
 import pandas as pd
 from rank_bm25 import BM25Okapi
 
-import tokeniser as tk
+import algo_tokeniser as tk
 from global_methods import save_to_csv, load_from_csv, load_dataframe_from_list
 
 from db import db_operations

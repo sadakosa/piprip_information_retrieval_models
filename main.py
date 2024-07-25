@@ -1,12 +1,13 @@
 from global_methods import load_yaml_config, save_to_json, load_json, save_bm25, load_bm25
 from global_methods import save_to_csv, load_from_csv, load_dataframe_from_list
-import tokeniser as tk
+import algo_tokeniser as tk
 
 from db.db_client import DBClient
 from db import db_operations
 
-from bm25 import run_bm25
-from citation_similarity import get_full_citation_similarity
+from algo_bm25 import run_bm25
+from algo_citation_similarity import get_full_citation_similarity
+from algo_graph_generator import generate_graphs
 
 def setup_db():
     config = load_yaml_config('config/config.yaml')
@@ -34,14 +35,14 @@ def main():
     # save_to_csv(data_df, "raw_papers", "")
 
     raw_papers_df = load_from_csv("raw_papers", "")
-    # target_ss_ids = load_json("ss_ids", "test_data")
-    target_ss_ids = load_json("ss_ids_large", "test_data")
+    target_ss_ids = load_json("ss_ids", "test_data")
+    # target_ss_ids = load_json("ss_ids_large", "test_data")
     target_ss_id = target_ss_ids[0]
 
     chunk_size = 10000
 
     # ================== Citation Similarity ==================
-    get_full_citation_similarity(dbclient, target_ss_ids, chunk_size)
+    # get_full_citation_similarity(dbclient, target_ss_ids, chunk_size)
     # get_inmoment_citation_similarity(dbclient, ss_id)
     
 
@@ -49,11 +50,12 @@ def main():
     title_weight = 0.6
     abstract_weight = 0.4
 
-    run_bm25(dbclient, raw_papers_df, chunk_size, target_ss_ids, title_weight, abstract_weight)
+    # run_bm25(dbclient, raw_papers_df, chunk_size, target_ss_ids, title_weight, abstract_weight)
 
     # ================== Produce Graph ==================
     # produce graph based on citation similarity and bm25 results
     # produce graph based on citation similarity 
+    generate_graphs(dbclient, target_ss_ids)
 
     # ================== Evaluation ==================
     
