@@ -30,12 +30,12 @@ def setup_db():
 
 def main():
     dbclient, dbclient_read = setup_db()
-    data = db_operations.get_all_paper_ids(dbclient_read)    
-    raw_papers_df = load_dataframe_from_list(data, ["ss_id", "title", "abstract"])
+    # data = db_operations.get_all_paper_ids(dbclient_read)    
+    # raw_papers_df = load_dataframe_from_list(data, ["ss_id", "title", "abstract"])
     # save_to_csv(data_df, "raw_papers", "")
 
-    raw_papers_df = load_from_csv("raw_papers", "")
-    target_ss_ids = load_json("ss_ids", "test_data")
+    # raw_papers_df = load_from_csv("raw_papers", "")
+    # target_ss_ids = load_json("ss_ids", "test_data")
     # target_ss_ids = load_json("ss_ids_large", "test_data")
     # target_ss_id = target_ss_ids[0]
 
