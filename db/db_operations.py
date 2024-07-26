@@ -20,6 +20,135 @@ def get_papers_by_ss_ids(db_client, ss_ids):
     cursor = db_client.execute(select_query, (tuple(ss_ids),))
     return cursor.fetchall()
 
+def get_papers_by_ss_id(db_client, ss_id):
+    select_query = """
+    SELECT ss_id, clean_title, clean_abstract FROM papers
+    WHERE ss_id = %s
+    AND is_cleaned = True;
+    """
+    cursor = db_client.execute(select_query, (ss_id,))
+    return cursor.fetchone()
+
+# def get_scibert_scores_by_ss_id(db_client, target_ss_id, semantic_ss_ids, cs_ss_ids):
+#     """
+#     Retrieve SciBERT similarity scores between the target paper and a list of other papers.
+
+#     Parameters:
+#     db_client (DatabaseClient): The database client instance.
+#     target_ss_id (str): The ss_id of the target paper.
+#     semantic_ss_ids (list): A list of ss_id for semantic results papers.
+#     cs_ss_ids (list): A list of ss_id for CS results papers.
+
+#     Returns:
+#     dict: A dictionary with ss_id as keys and their corresponding similarity scores as values.
+#     """
+#     # Combine the list of ss_ids
+#     combined_ss_ids = list(set(semantic_ss_ids + cs_ss_ids))
+    
+#     # Prepare the query
+#     query = """
+#     SELECT ss_id_two, title_similarity, abstract_similarity, combined_similarity
+#     FROM scibert_paper_paper_edges
+#     WHERE ss_id_one = %s AND ss_id_two = ANY(%s)
+#     UNION
+#     SELECT ss_id_one, title_similarity, abstract_similarity, combined_similarity
+#     FROM scibert_paper_paper_edges
+#     WHERE ss_id_two = %s AND ss_id_one = ANY(%s);
+#     """
+    
+#     # Execute the query
+#     cursor = db_client.execute(query, (target_ss_id, combined_ss_ids, target_ss_id, combined_ss_ids))
+    
+#     # Fetch the results
+#     results = cursor.fetchall()
+    
+#     # Organize the results in a dictionary
+#     scores = {
+#         result[0]: {
+#             'title_similarity': result[1],
+#             'abstract_similarity': result[2],
+#             'combined_similarity': result[3]
+#         }
+#         for result in results
+#     }
+    
+#     return scores
+
+
+
+
+
+
+
+def get_scibert_scores_by_ss_id(db_client, target_ss_id, semantic_ss_ids, cs_ss_ids):
+    """
+    Retrieve SciBERT similarity scores between the target paper and a list of other papers.
+
+    Parameters:
+    db_client (DatabaseClient): The database client instance.
+    target_ss_id (str): The ss_id of the target paper.
+    semantic_ss_ids (list): A list of ss_id for semantic results papers.
+    cs_ss_ids (list): A list of ss_id for CS results papers.
+
+    Returns:
+    dict: A dictionary with ss_id as keys and their corresponding similarity scores as values.
+    """
+    # Combine the list of ss_ids
+    combined_ss_ids = list(set(semantic_ss_ids + cs_ss_ids))
+    
+    # Print combined_ss_ids for debugging
+    print(f"Combined ss_ids: {combined_ss_ids}")
+    
+    # Prepare the query
+    query = """
+    SELECT ss_id_one, ss_id_two, title_similarity, abstract_similarity, combined_similarity
+    FROM scibert_paper_paper_edges
+    WHERE ss_id_one = %s AND ss_id_two = ANY(%s)
+    UNION
+    SELECT ss_id_one, ss_id_two, title_similarity, abstract_similarity, combined_similarity
+    FROM scibert_paper_paper_edges
+    WHERE ss_id_two = %s AND ss_id_one = ANY(%s);
+    """
+    
+    # Execute the query
+    cursor = db_client.execute(query, (target_ss_id, combined_ss_ids, target_ss_id, combined_ss_ids))
+    
+    # Fetch the results
+    results = cursor.fetchall()
+    
+    # Print results for debugging
+    # print(f"Query results: {results}")
+
+    # Organize the results in a dictionary
+    scores = {}
+    for result in results:
+        ss_id_one = result[0]
+        ss_id_two = result[1]
+        title_similarity = result[2]
+        abstract_similarity = result[3]
+        combined_similarity = result[4]
+        
+        # Add scores to dictionary
+        if ss_id_two != target_ss_id and ss_id_two not in scores:
+            scores[ss_id_two] = {
+                'title_similarity': title_similarity,
+                'abstract_similarity': abstract_similarity,
+                'combined_similarity': combined_similarity
+            }
+        
+        if ss_id_one != target_ss_id and ss_id_one not in scores:
+            scores[ss_id_one] = {
+                'title_similarity': title_similarity,
+                'abstract_similarity': abstract_similarity,
+                'combined_similarity': combined_similarity
+            }
+
+    return scores
+
+
+
+
+
 
 # ======================== CITATION SIMILARITY OPERATIONS ========================
 
@@ -161,3 +290,181 @@ def batch_insert_citation_similarity(db_client, logger, citation_similarities, c
     print("Batch insertion complete.")
     logger.log_message("Batch insertion complete.")
     return
+
+
+
+
+
+# ==========================================================
+# GRAPH GENERATION OPERATIONS
+# ==========================================================
+
+def get_discounted_topics_by_combined_scores_only(db_client, target_ss_id): # returns all the topic-paper edges of the top 5 topics within each category
+    query = """
+    WITH RankedTopics AS (
+        SELECT
+            t.id,
+            t.topic,
+            t.level,
+            t.category,
+            e.combined_similarity,
+            (e.combined_similarity * ((100 - (80.0 / t.level^3)) / 100)) AS discounted_combined_similarity,
+            RANK() OVER (PARTITION BY t.category ORDER BY (e.combined_similarity * ((100 - (80.0 / t.level^3)) / 100)) DESC) AS rank
+        FROM
+            topics t
+            JOIN scibert_topic_paper_edges e ON t.id = e.topic_id
+        WHERE
+            e.ss_id = %s
+    ), 
+    TopTopics AS (
+        SELECT
+            id,
+            topic,
+            level,
+            category,
+            discounted_combined_similarity
+        FROM
+            RankedTopics
+        WHERE
+            rank <= 5
+    )
+    SELECT
+        id AS topic_id,
+        topic,
+        level,
+        category,
+        discounted_combined_similarity
+    FROM
+        TopTopics
+    ORDER BY
+        category, topic_id;
+    """
+    cursor = db_client.execute(query, (target_ss_id,))
+    return cursor.fetchall()
+
+def get_topic_topic_similarity_by_topic_ids(db_client, topic_ids):
+    if not topic_ids:
+        return []
+
+    query = """
+    SELECT
+        t1.topic_id_one AS topic1_id,
+        t1.topic_id_two AS topic2_id,
+        t1.weight AS similarity
+    FROM
+        topic_topic_edges t1
+    WHERE
+        t1.topic_id_one IN %s
+        OR t1.topic_id_two IN %s;
+    """
+    cursor = db_client.execute(query, (tuple(topic_ids), tuple(topic_ids)))
+    return cursor.fetchall()
+
+def get_papers_by_topic_ids(db_client, selected_topic_ids):
+    if not selected_topic_ids:
+        return []
+
+    topic_ids_str = ', '.join([str(id) for id in selected_topic_ids])
+    print("topic_ids_str:", topic_ids_str)
+
+    limit_per_topic = 5
+    min_unique_papers_per_topic = 5
+    unique_papers_by_topic = {}
+
+    while True:
+        # SQL query to fetch papers with the highest similarity to the given topics
+        query = f"""
+        WITH ranked_papers AS (
+            SELECT 
+                tpe.topic_id, 
+                tpe.ss_id, 
+                p.clean_title, 
+                p.clean_abstract, 
+                tpe.combined_similarity,
+                ROW_NUMBER() OVER (PARTITION BY tpe.topic_id ORDER BY tpe.combined_similarity DESC) as rank
+            FROM 
+                topic_paper_edges tpe
+            JOIN 
+                papers p ON tpe.ss_id = p.ss_id
+            WHERE 
+                tpe.topic_id IN ({topic_ids_str})
+        )
+        SELECT 
+            topic_id, 
+            ss_id, 
+            clean_title, 
+            clean_abstract, 
+            combined_similarity
+        FROM 
+            ranked_papers
+        WHERE 
+            rank <= ({limit_per_topic})
+        ORDER BY 
+            topic_id, rank;
+        """
+
+        
+        cursor = db_client.execute(query)
+        results = cursor.fetchall()
+
+        print("length: ",len(results))
+
+        # Process and store the results
+        papers_by_topic = {}
+        for row in results:
+            topic_id = row[0]
+            if topic_id not in papers_by_topic:
+                papers_by_topic[topic_id] = []
+            papers_by_topic[topic_id].append({
+                'topic_id': row[0],
+                'ss_id': row[1],
+                'title': row[2],
+                'abstract': row[3],
+                'combined_similarity': row[4]
+            })
+
+        # Check if each topic has at least 10 unique papers
+        unique_papers_by_topic = {topic_id: set([paper['ss_id'] for paper in papers])
+                                    for topic_id, papers in papers_by_topic.items()}
+        
+        all_topics_met_criteria = all(len(papers) >= min_unique_papers_per_topic for papers in unique_papers_by_topic.values())
+        
+        if all_topics_met_criteria:
+            break
+
+        # Increase the limit and try again
+        limit_per_topic += 10
+        print("Increasing limit to", limit_per_topic)
+
+    final_papers_by_topic = {topic_id: list(papers) for topic_id, papers in unique_papers_by_topic.items()}
+    return papers_by_topic
+
+def get_highest_citation_similarity(db_client, target_ss_id):
+    query = """
+    SELECT
+        rp.ss_id,
+        rp.clean_title AS related_paper_title,
+        rp.clean_abstract AS related_paper_abstract,
+        cs.co_citation_count,
+        cs.bibliographic_coupling_count,
+        cs.co_citation_count + cs.bibliographic_coupling_count AS combined_score
+    FROM
+        citation_similarity cs
+    JOIN 
+        papers p ON cs.similar_paper = p.ss_id OR cs.ss_id = p.ss_id
+    JOIN 
+        papers rp ON rp.ss_id = CASE
+                                WHEN cs.similar_paper = p.ss_id THEN cs.ss_id
+                                ELSE cs.similar_paper
+                                END
+    WHERE
+        p.ss_id = %s AND rp.is_cleaned = True
+    ORDER BY
+        combined_score DESC
+    LIMIT %s;
+    """
+    cursor = db_client.execute(query, (target_ss_id,50))
+    return cursor.fetchall()
+
+
+

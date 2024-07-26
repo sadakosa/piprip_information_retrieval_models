@@ -26,7 +26,7 @@ nltk.download('stopwords')
 #     return raw_papers
 
 def tokenise_papers_df(raw_papers_df):
-    print(raw_papers_df['title'][0])
+    # print(raw_papers_df['title'][0])
     raw_papers_df['title_tokens'] = raw_papers_df['title'].apply(lambda x: clean_and_tokenise(x, "title"))
     raw_papers_df['abstract_tokens'] = raw_papers_df['abstract'].apply(lambda x: clean_and_tokenise(x, "abstract"))
     return raw_papers_df

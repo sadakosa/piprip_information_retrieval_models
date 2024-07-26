@@ -8,10 +8,6 @@ import numpy as np
 # Full Citation Similarity
 # ====================================================================================================
 
-def create_citation_similarity_tables(db_client):
-    
-
-    return
 
 # def get_full_citation_similarity(db_client, target_ss_ids, chunk_size):
 #     # Get all co-citations and bibliographic couples

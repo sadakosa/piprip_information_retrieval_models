@@ -6,59 +6,89 @@ from rank_bm25 import BM25Okapi
 import algo_tokeniser as tk
 from global_methods import save_to_csv, load_from_csv, load_dataframe_from_list
 
+
 from db import db_operations
 
 # ====================================================================================================
 # MAIN BM25 FUNCTION
 # ====================================================================================================
 
-def run_bm25(db_client, raw_papers_df, chunk_size, target_ss_ids, title_weight, abstract_weight):
-    combined_scores_list = []
-    bm25_titles, bm25_abstracts = None, None
+# def run_bm25(db_client, raw_papers_df, chunk_size, target_ss_ids, title_weight, abstract_weight): # for many target papers
+#     combined_scores_list = []
+#     bm25_titles, bm25_abstracts = None, None
 
-    # Process data in chunks
-    for start in range(0, len(raw_papers_df), chunk_size):
-        chunk = raw_papers_df.iloc[start:start + chunk_size]
-        papers_df = tk.tokenise_papers_df(chunk)
-        titles, abstracts = formatting_data(papers_df)
+#     # Process data in chunks
+#     for start in range(0, len(raw_papers_df), chunk_size):
+#         chunk = raw_papers_df.iloc[start:start + chunk_size]
+#         papers_df = tk.tokenise_papers_df(chunk)
+#         titles, abstracts = formatting_data(papers_df)
 
-        if bm25_titles is None and bm25_abstracts is None:
-            bm25_titles = initialize_bm25(titles)
-            bm25_abstracts = initialize_bm25(abstracts)
+#         if bm25_titles is None and bm25_abstracts is None:
+#             bm25_titles = initialize_bm25(titles)
+#             bm25_abstracts = initialize_bm25(abstracts)
 
-        target_papers = db_operations.get_papers_by_ss_ids(db_client, target_ss_ids)
-        combined_scores_df = pd.DataFrame(index=papers_df['ss_id'], columns=[target[0] for target in target_papers])
+#         target_papers = db_operations.get_papers_by_ss_ids(db_client, target_ss_ids)
+#         combined_scores_df = pd.DataFrame(index=papers_df['ss_id'], columns=[target[0] for target in target_papers])
 
-        for target_paper in target_papers:
-            title_title_scores = run_bm25_query(bm25_titles, target_paper[1], "target_title")
-            title_abstract_scores = run_bm25_query(bm25_abstracts, target_paper[1], "target_title")
-            abstract_title_scores = run_bm25_query(bm25_titles, target_paper[2], "target_abstract")
-            abstract_abstract_scores = run_bm25_query(bm25_abstracts, target_paper[2], "target_abstract")
+#         for target_paper in target_papers:
+#             title_title_scores = run_bm25_query(bm25_titles, target_paper[1], "target_title")
+#             title_abstract_scores = run_bm25_query(bm25_abstracts, target_paper[1], "target_title")
+#             abstract_title_scores = run_bm25_query(bm25_titles, target_paper[2], "target_abstract")
+#             abstract_abstract_scores = run_bm25_query(bm25_abstracts, target_paper[2], "target_abstract")
 
-            combined_scores = [
-                (title_weight * (title_title_score + abstract_title_score) + abstract_weight * (title_abstract_score + abstract_abstract_score))
-                for title_title_score, title_abstract_score, abstract_title_score, abstract_abstract_score in zip(title_title_scores, title_abstract_scores, abstract_title_scores, abstract_abstract_scores)
-            ]
+#             combined_scores = [
+#                 (title_weight * (title_title_score + abstract_title_score) + abstract_weight * (title_abstract_score + abstract_abstract_score))
+#                 for title_title_score, title_abstract_score, abstract_title_score, abstract_abstract_score in zip(title_title_scores, title_abstract_scores, abstract_title_scores, abstract_abstract_scores)
+#             ]
 
-            combined_scores_df[target_paper[0]] = combined_scores
+#             combined_scores_df[target_paper[0]] = combined_scores
 
-        combined_scores_list.append(combined_scores_df)
+#         combined_scores_list.append(combined_scores_df)
 
-    final_combined_scores_df = pd.concat(combined_scores_list, axis=0)
-    ranked_papers_with_scores = pd.DataFrame()
+#     final_combined_scores_df = pd.concat(combined_scores_list, axis=0)
+#     ranked_papers_with_scores = pd.DataFrame()
 
-    for target in final_combined_scores_df.columns:
-        temp_df = pd.DataFrame({
-            f"{target}_ss_id": final_combined_scores_df[target].sort_values(ascending=False).index,
-            f"{target}_score": final_combined_scores_df[target].sort_values(ascending=False).values
-        })
-        ranked_papers_with_scores = pd.concat([ranked_papers_with_scores, temp_df], axis=1)
+#     for target in final_combined_scores_df.columns:
+#         temp_df = pd.DataFrame({
+#             f"{target}_ss_id": final_combined_scores_df[target].sort_values(ascending=False).index,
+#             f"{target}_score": final_combined_scores_df[target].sort_values(ascending=False).values
+#         })
+#         ranked_papers_with_scores = pd.concat([ranked_papers_with_scores, temp_df], axis=1)
 
-    save_to_csv(ranked_papers_with_scores, "ranked_papers_with_scores_bm25", "results")
+#     save_to_csv(ranked_papers_with_scores, "ranked_papers_with_scores_bm25", "results")
 
-    return ranked_papers_with_scores
+#     return ranked_papers_with_scores
 
 
+
+def get_scores_for_target_paper(target_paper, results):
+    # target_paper = (ss_id, title, abstract)
+    # results = [(ss_id, title, abstract), ...]
+    # output = [score1, score2, ...]
+
+    title_tokens = []
+    abstract_tokens = []
+
+    for result in results:
+        title_token = tk.clean_and_tokenise(result[1], "title")
+        abstract_token = tk.clean_and_tokenise(result[2], "abstract")
+
+        title_tokens.append(title_token)
+        abstract_tokens.append(abstract_token)
+
+    bm25_titles = initialize_bm25(title_tokens)
+    bm25_abstracts = initialize_bm25(abstract_tokens)
+    title_scores = run_bm25_query(bm25_titles, target_paper[1], "target_title")
+    abstract_scores = run_bm25_query(bm25_abstracts, target_paper[2], "target_abstract")
+
+    title_weight = 0.6
+    abstract_weight = 0.4
+    combined_scores = [
+        (title_weight * title_score + abstract_weight * abstract_score) 
+        for title_score, abstract_score in zip(title_scores, abstract_scores)
+    ]
+
+    return combined_scores
 
 
 
@@ -76,6 +106,8 @@ def formatting_data(papers_df):
 # ====================================================================================================
 # Prepare data for BM25
 def initialize_bm25(papers):
+    # print("papers")
+    # print(papers)
     bm25 = BM25Okapi(papers)
     return bm25
 
