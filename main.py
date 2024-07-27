@@ -382,7 +382,7 @@ def main():
                 # print("Results: ", results)
                 print(f"Processed {idx_ssid + 1} of {len(target_ss_ids)}")
                 
-                if latest_chunk + chunk_size < idx_ssid:
+                if latest_chunk + chunk_size < idx_ssid or len(target_ss_ids) == idx_ssid + 1:
                     print(f"Inserting chunk {latest_result} to {len(results)}")
                     chunk = results[latest_result:]
                     execute_batch(dbclient.conn.cursor(), """
