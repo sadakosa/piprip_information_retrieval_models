@@ -116,8 +116,8 @@ def search_and_evaluate(dbclient, dbclient_read, logger, target_ss_id):
     cs_results_df = similar_papers_by_citations_df[['ss_id', 'title', 'abstract']]
     cs_results = cs_results_df.values.tolist() # [(ss_id, title, abstract), ...]
 
-    print("semantic_results: ", semantic_results)
-    print("cs_results: ", cs_results)
+    # print("semantic_results: ", semantic_results)
+    # print("cs_results: ", cs_results)
 
     if semantic_results is None or cs_results is None or len(semantic_results) == 0 or len(cs_results) == 0:
         print(f"No results found for paper: {target_ss_id}, skipping paper")
