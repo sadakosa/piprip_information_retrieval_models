@@ -58,12 +58,12 @@ def main():
     chunk_size = 10000
 
     # ================== Citation Similarity ==================
-    # db_operations.create_citation_similarity_table(dbclient)
-    # get_full_citation_similarity(dbclient, chunk_size)
+    db_operations.create_citation_similarity_table(dbclient)
+    get_full_citation_similarity(dbclient, chunk_size)
 
     # insert into db
-    # citation_similarities_df = load_from_csv(file_name="paper_paper_citation_similarity", folder_name="citation_similarity")
-    # citation_similarities = list(citation_similarities_df.itertuples(index=False, name=None))
+    citation_similarities_df = load_from_csv(file_name="paper_paper_citation_similarity", folder_name="citation_similarity")
+    citation_similarities = list(citation_similarities_df.itertuples(index=False, name=None))
 
     # time_start = time.time()
 
@@ -95,40 +95,40 @@ def main():
 
     # ================== Search ==================
     # returns a list of papers, topics, their details and scores as applicable
-    graph_generator = GraphGenerator(dbclient)
+    # graph_generator = GraphGenerator(dbclient)
 
     # produce graph based on scibert (3 variations: 1. only title, 2. only abstract, 3. title + abstract)
-    top_topic_paper_edges_df, top_10_topics_df = graph_generator.generate_semantic_graph(target_ss_id)
-    semantic_results_df = top_topic_paper_edges_df[['ss_id', 'title', 'abstract']]
-    semantic_results = semantic_results_df.values.tolist() # [(ss_id, title, abstract), ...]
+    # top_topic_paper_edges_df, top_10_topics_df = graph_generator.generate_semantic_graph(target_ss_id)
+    # semantic_results_df = top_topic_paper_edges_df[['ss_id', 'title', 'abstract']]
+    # semantic_results = semantic_results_df.values.tolist() # [(ss_id, title, abstract), ...]
 
     # produce graph based on citation similarity
-    similar_papers_by_citations_df = graph_generator.generate_co_citation_graph(target_ss_id)
-    cs_results_df = similar_papers_by_citations_df[['ss_id', 'title', 'abstract']]
-    cs_results = cs_results_df.values.tolist() # [(ss_id, title, abstract), ...]
+    # similar_papers_by_citations_df = graph_generator.generate_co_citation_graph(target_ss_id)
+    # cs_results_df = similar_papers_by_citations_df[['ss_id', 'title', 'abstract']]
+    # cs_results = cs_results_df.values.tolist() # [(ss_id, title, abstract), ...]
 
 
 
     # ================== Evaluation ==================
-    evaluator = Evaluator(dbclient)
+    # evaluator = Evaluator(dbclient)
 
     # evaluate using bm25
-    bm25_combined_scores = evaluator.run_bm25_eval(target_ss_id, semantic_results, cs_results)
-    print("target paper: ", target_ss_id)
-    print("bm25 semantic score: ", bm25_combined_scores['median_semantic_score'])
-    print("bm25 cs score: ", bm25_combined_scores['median_cs_score'])
+    # bm25_combined_scores = evaluator.run_bm25_eval(target_ss_id, semantic_results, cs_results)
+    # print("target paper: ", target_ss_id)
+    # print("bm25 semantic score: ", bm25_combined_scores['median_semantic_score'])
+    # print("bm25 cs score: ", bm25_combined_scores['median_cs_score'])
     
     # evaluate using scibert
-    scibert_combined_scores = evaluator.run_bert_eval(target_ss_id, semantic_results, cs_results)
-    print("target paper: ", target_ss_id)
-    print("scibert semantic score: ", scibert_combined_scores['median_semantic_score'])
-    print("scibert cs score: ", scibert_combined_scores['median_cs_score'])
+    # scibert_combined_scores = evaluator.run_bert_eval(target_ss_id, semantic_results, cs_results)
+    # print("target paper: ", target_ss_id)
+    # print("scibert semantic score: ", scibert_combined_scores['median_semantic_score'])
+    # print("scibert cs score: ", scibert_combined_scores['median_cs_score'])
 
     # find whether there is beneficial new papers being discovered in semantic search
-    scibert_score, bm25_score = evaluator.new_papers_scoring(target_ss_id, semantic_results, cs_results)
-    print("target paper: ", target_ss_id)
-    print("median scibert score of new undiscovered papers: ", scibert_score)
-    print("median bm25 score of new undiscovered papers: ", bm25_score)
+    # scibert_score, bm25_score = evaluator.new_papers_scoring(target_ss_id, semantic_results, cs_results)
+    # print("target paper: ", target_ss_id)
+    # print("median scibert score of new undiscovered papers: ", scibert_score)
+    # print("median bm25 score of new undiscovered papers: ", bm25_score)
 
 if __name__ == "__main__":
     main()
