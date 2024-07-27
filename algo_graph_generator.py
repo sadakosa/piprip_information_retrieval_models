@@ -10,7 +10,7 @@ class GraphGenerator:
             self.generate_graph(target_ss_id)
 
     def generate_semantic_graph(self, target_ss_id):
-        print(f"Generating graph for target paper {target_ss_id}")
+        # print(f"Generating graph for target paper {target_ss_id}")
         # 1. get the top 5 papers from each category (36 categories), discounted by levels
         # this ensures diversity, and specificity due to discounting
         test_results = db_operations.get_discounted_topics_by_combined_scores_only(self.dbclient, target_ss_id)
@@ -70,7 +70,7 @@ class GraphGenerator:
         topic_similarity_weight = 1
         top_20_topics_df['final_topic_score'] = topic_score_weight * top_20_topics_df['normalized_score'] - topic_similarity_weight * top_20_topics_df['normalized_similarity']
         top_10_topics_df = top_20_topics_df[['topic_id', 'topic', 'normalized_score', 'normalized_similarity', 'final_topic_score']].sort_values(by="final_topic_score", ascending=False).head(10)
-        print(top_10_topics_df[['topic_id', 'topic', 'normalized_score', 'normalized_similarity', 'final_topic_score']].sort_values(by="final_topic_score", ascending=False))
+        # print(top_10_topics_df[['topic_id', 'topic', 'normalized_score', 'normalized_similarity', 'final_topic_score']].sort_values(by="final_topic_score", ascending=False))
         
         # 4. from top 10 topic nodes, get the paper nodes with the highest similarities to the topic nodes, 10 papers per topic node
         selected_topic_ids = top_10_topics_df['topic_id'].tolist()

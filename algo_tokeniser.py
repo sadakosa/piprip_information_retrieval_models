@@ -57,4 +57,4 @@ def clean_and_tokenise(text, text_type, ss_id=None):
     # tokens = [ps.stem(word) for word in words]
 
     # print("tokens: ", tokens)
-    return tokens
+    return tokens if isinstance(tokens, list) else []
