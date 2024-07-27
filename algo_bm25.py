@@ -59,36 +59,106 @@ from db import db_operations
 
 #     return ranked_papers_with_scores
 
+# 
+
+# def get_scores_for_target_paper(target_paper, results, title_check):
+#     # target_paper = (ss_id, title, abstract)
+#     # results = [(ss_id, title, abstract), ...]
+#     # output = [score1, score2, ...]
+#     # print("target_paper: ", target_paper)
+#     # print("results: ", results)
+#     # print("title_check: ", title_check)
+#     if title_check == "title":
+#         title_tokens = []
+
+#         for result in results:
+#             title_token = tk.clean_and_tokenise(result[1], "title")
+#             title_tokens.append(title_token)
+        
+#         if len(title_tokens) == 0:
+#             return []
+
+#         bm25_titles = initialize_bm25(title_tokens)
+#         title_scores = run_bm25_query(bm25_titles, target_paper[1], "target_title")
+
+#         return title_scores
+#     else: 
+#         title_tokens = []
+#         abstract_tokens = []
+
+#         for result in results:
+#             title_token = tk.clean_and_tokenise(result[1], "title")
+#             abstract_token = tk.clean_and_tokenise(result[2], "abstract")
+
+#             title_tokens.append(title_token)
+#             abstract_tokens.append(abstract_token)
+
+#         if len(title_tokens) == 0 or len(abstract_tokens) == 0:
+#             return []
+
+#         bm25_titles = initialize_bm25(title_tokens)
+#         bm25_abstracts = initialize_bm25(abstract_tokens)
+#         title_scores = run_bm25_query(bm25_titles, target_paper[1], "target_title")
+#         abstract_scores = run_bm25_query(bm25_abstracts, target_paper[2], "target_abstract")
+
+#         title_weight = 0.6
+#         abstract_weight = 0.4
+#         combined_scores = [
+#             (title_weight * title_score + abstract_weight * abstract_score) 
+#             for title_score, abstract_score in zip(title_scores, abstract_scores)
+#         ]
+
+#         return combined_scores
 
 
-def get_scores_for_target_paper(target_paper, results):
+
+
+
+
+def get_scores_for_target_paper(target_paper, results, title_check):
     # target_paper = (ss_id, title, abstract)
     # results = [(ss_id, title, abstract), ...]
     # output = [score1, score2, ...]
+    if title_check == "title":
+        title_tokens = [tk.clean_and_tokenise(result[1], "title") for result in results]
+        
+        if not title_tokens:
+            return []
 
-    title_tokens = []
-    abstract_tokens = []
+        bm25_titles = initialize_bm25(title_tokens)
+        if bm25_titles is None:
+            return []
 
-    for result in results:
-        title_token = tk.clean_and_tokenise(result[1], "title")
-        abstract_token = tk.clean_and_tokenise(result[2], "abstract")
+        title_scores = run_bm25_query(bm25_titles, target_paper[1], "target_title")
+        return title_scores
+    else: 
+        title_tokens = [tk.clean_and_tokenise(result[1], "title") for result in results]
+        abstract_tokens = [tk.clean_and_tokenise(result[2], "abstract") for result in results]
 
-        title_tokens.append(title_token)
-        abstract_tokens.append(abstract_token)
+        if not title_tokens or not abstract_tokens:
+            return []
 
-    bm25_titles = initialize_bm25(title_tokens)
-    bm25_abstracts = initialize_bm25(abstract_tokens)
-    title_scores = run_bm25_query(bm25_titles, target_paper[1], "target_title")
-    abstract_scores = run_bm25_query(bm25_abstracts, target_paper[2], "target_abstract")
+        bm25_titles = initialize_bm25(title_tokens)
+        bm25_abstracts = initialize_bm25(abstract_tokens)
+        
+        if bm25_titles is None or bm25_abstracts is None:
+            return []
 
-    title_weight = 0.6
-    abstract_weight = 0.4
-    combined_scores = [
-        (title_weight * title_score + abstract_weight * abstract_score) 
-        for title_score, abstract_score in zip(title_scores, abstract_scores)
-    ]
+        title_scores = run_bm25_query(bm25_titles, target_paper[1], "target_title")
+        abstract_scores = run_bm25_query(bm25_abstracts, target_paper[2], "target_abstract")
 
-    return combined_scores
+        title_weight = 0.6
+        abstract_weight = 0.4
+        combined_scores = [
+            (title_weight * title_score + abstract_weight * abstract_score) 
+            for title_score, abstract_score in zip(title_scores, abstract_scores)
+        ]
+
+        return combined_scores
+
+
+
+
 
 
 
@@ -108,6 +178,11 @@ def formatting_data(papers_df):
 def initialize_bm25(papers):
     # print("papers")
     # print(papers)
+
+    if not papers or len(papers) == 0 or (not all([isinstance(paper, list) and len(paper) != 0 for paper in papers])):  # Check if the papers list is empty
+        print("The papers list is empty. Cannot initialize BM25.")
+        return None
+    print("papers: ", papers)
     bm25 = BM25Okapi(papers)
     return bm25
 

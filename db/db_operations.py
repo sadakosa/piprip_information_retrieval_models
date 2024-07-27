@@ -1,4 +1,5 @@
 
+from psycopg2.extras import execute_values
 
 # ======================== SELECTION OPERATIONS ========================
 
@@ -468,3 +469,69 @@ def get_highest_citation_similarity(db_client, target_ss_id):
 
 
 
+# ==========================================================
+# EVALUATOR OPERATIONS
+# ==========================================================
+
+def create_tested_papers_table():
+    """
+    Create a table to store the tested papers and their similarity scores.
+    
+    Parameters:
+    target_paper (str): The ss_id of the tested_paper.
+    results (list): A list of tuples containing the  of the tested papers.
+    """
+    create_query = """
+    CREATE TABLE IF NOT EXISTS tested_papers (
+        id SERIAL PRIMARY KEY,
+        tested_paper TEXT NOT NULL,
+        25p_score_bm25 NUMERIC NOT NULL,
+        50p_score_bm25 NUMERIC NOT NULL,
+        75p_score_bm25 NUMERIC NOT NULL,,
+        max_score_bm25 NUMERIC NOT NULL,
+        25p_score_scibert NUMERIC NOT NULL,
+        50p_score_scibert NUMERIC NOT NULL,
+        75p_score_scibert NUMERIC NOT NULL,
+        max_score_scibert NUMERIC NOT NULL,
+        category TEXT NOT NULL,
+        FOREIGN KEY (tested_paper) REFERENCES papers(ss_id)
+    );
+    """
+    db_client.execute(create_query)
+    return
+
+def batch_insert_bm25_results(target_paper, results): 
+    """    
+    # results = [(
+        tested_paper,
+        25p_semantic_score,
+        50p_semantic_score,
+        75p_semantic_score,
+        average_semantic_score,
+        25p_cs_score, 
+        50p_cs_score,
+        75p_cs_score,
+        average_cs_score), ...]
+    """
+    insert_query = """
+    INSERT INTO tested_papers (
+        tested_paper,
+        25p_semantic_score,
+        50p_semantic_score,
+        75p_semantic_score,
+        average_semantic_score,
+        25p_cs_score, 
+        50p_cs_score,
+        75p_cs_score,
+        average_cs_score
+    )
+    VALUES %s
+    ON CONFLICT (tested_paper) DO NOTHING;
+    """
+    
+    data = [(target_paper, *paper) for paper in results]
+    
+    # Insert the data
+    execute_values(db_client.cur, insert_query, data)
+    db_client.commit()
+    return

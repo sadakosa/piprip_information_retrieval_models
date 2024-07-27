@@ -4,6 +4,8 @@ import pandas as pd
 import time
 import numpy as np
 
+# PAPER - PAPER CITATION SIMILARITY GENERATION
+
 # ====================================================================================================
 # Full Citation Similarity
 # ====================================================================================================
@@ -38,7 +40,6 @@ import numpy as np
 #     save_to_csv(all_related_papers_df, "ranked_papers_with_scores_citation_similarity", "results")
 
 #     return all_related_papers_df
-
 
 
 # def full_citation_similarity_ranking(co_citation_df, bibliographic_coupling_df, ss_id):
