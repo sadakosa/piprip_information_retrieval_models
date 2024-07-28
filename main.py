@@ -317,9 +317,10 @@ def main():
         target_ss_ids = [target_paper[0] for target_paper in target_papers]
         # print("target_ss_ids: ", target_ss_ids)
 
-        for paper in target_ss_ids:
-            ss_id = paper[0]  # Assuming ss_id is the first column
+        for ss_id in target_ss_ids:
+            # print("Processing target paper: ", ss_id)
             dbclient.cur.execute(update_query, (ss_id,))
+            # print("Updated paper: ", ss_id)
         dbclient.conn.commit()
 
         if len(target_ss_ids) == 0:
