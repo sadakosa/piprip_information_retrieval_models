@@ -176,13 +176,14 @@ def formatting_data(papers_df):
 # ====================================================================================================
 # Prepare data for BM25
 def initialize_bm25(papers):
-    # print("papers")
-    # print(papers)
-
-    if not papers or len(papers) == 0 or (not all([isinstance(paper, list) and len(paper) != 0 for paper in papers])):  # Check if the papers list is empty
+    if not papers or len(papers) == 0:  # Check if the papers list is empty
         print("The papers list is empty. Cannot initialize BM25.")
         return None
-    print("papers: ", papers)
+    papers = [paper if isinstance(paper, list) else [] for paper in papers]  # Remove empty lists
+    if (not all([isinstance(paper, list) for paper in papers])):
+        print('papers is not a list of lists or some lists are empty')
+        print('papers: ', str(papers)[:100])
+        return None
     bm25 = BM25Okapi(papers)
     return bm25
 

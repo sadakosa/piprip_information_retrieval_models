@@ -17,10 +17,29 @@ class DBClient:
         self.cur.close()
         self.conn.close()
 
+    # def execute(self, query, params=None):
+    #     self.cur.execute(query, params)
+    #     return self.cur
+    
     def execute(self, query, params=None):
-        self.cur.execute(query, params)
-        return self.cur
+        try:
+            # print(f"Executing query: {query} with params: {params}")
+            self.cur.execute(query, params)
+            return self.cur
+        except Exception as e:
+            print(f"Error executing query: {e}")
+            self.rollback()
+            raise
+
 
     def commit(self):
         # print("Committing transaction")
         self.conn.commit()
+
+    def begin(self):
+        # Start a new transaction block
+        self.cur.execute("BEGIN")
+
+    def rollback(self):
+        # Roll back the current transaction
+        self.conn.rollback()

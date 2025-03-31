@@ -27,12 +27,9 @@ class Evaluator:
         target_paper = db_operations.get_papers_by_ss_id(self.db_client, target_ss_id)
         semantic_scores = get_scores_for_target_paper(target_paper, semantic_result, title_check)
         cs_scores = get_scores_for_target_paper(target_paper, cs_result, "cs")
-        # print(cs_scores)
-
-        if len(semantic_scores) == 0 or len(cs_scores) == 0:
-            return []
 
         combined_scores = {
+            "semantic_scores": semantic_scores,
             "25p_semantic_score": np.percentile(semantic_scores, 25) if len(semantic_scores) > 0 else 0,
             "25p_cs_score": np.percentile(cs_scores, 25),
             "50p_semantic_score": np.percentile(semantic_scores, 50),
@@ -41,7 +38,7 @@ class Evaluator:
             "75p_cs_score": np.percentile(cs_scores, 75),
             "max_semantic_score": max(semantic_scores),
             "max_cs_score": max(cs_scores),
-            "target_paper": target_paper[1]
+            "target_paper": target_paper[0]
         }
 
         returned_scores = [
@@ -66,10 +63,8 @@ class Evaluator:
         semantic_scores = self.colbert.get_scores_for_target_paper(target_paper, semantic_results, title_check)
         cs_scores = self.colbert.get_scores_for_target_paper(target_paper, cs_results, title_check)
 
-        if len(semantic_scores) == 0 or len(cs_scores) == 0:
-            return []
-
         combined_scores = {
+            "semantic_scores": semantic_scores,
             "25p_semantic_score": np.percentile(semantic_scores, 25),
             "25p_cs_score": np.percentile(cs_scores, 25),
             "50p_semantic_score": np.percentile(semantic_scores, 50),
@@ -78,7 +73,7 @@ class Evaluator:
             "75p_cs_score": np.percentile(cs_scores, 75),
             "max_semantic_score": max(semantic_scores),
             "max_cs_score": max(cs_scores),
-            "target_paper": target_paper[1]
+            "target_paper": target_paper[0]
         }
 
         return combined_scores
@@ -98,9 +93,6 @@ class Evaluator:
         all_zero_float64 = all(isinstance(x, np.float64) and x == 0.0 for x in semantic_scores)
         if all_zero_float64:
             return []
-        if len(semantic_scores) == 0:
-            return []
-
 
         combined_scores = {
             "25p_semantic_score": np.percentile(semantic_scores, 25),
@@ -111,7 +103,7 @@ class Evaluator:
             "75p_cs_score": 0,
             "max_semantic_score": max(semantic_scores),
             "max_cs_score": 0,
-            "target_paper": target_paper[1]
+            "target_paper": target_paper[0]
         }
 
         return combined_scores
@@ -119,8 +111,6 @@ class Evaluator:
     def run_bert_eval_novel(self, target_ss_id, results, title_check, category): # for 1 target paper
         target_paper = db_operations.get_papers_by_ss_id(self.db_client, target_ss_id)
         semantic_scores = self.colbert.get_scores_for_target_paper(target_paper, results, title_check)
-        if len(semantic_scores) == 0:
-            return []
 
         combined_scores = {
             "25p_semantic_score": np.percentile(semantic_scores, 25),
@@ -131,7 +121,7 @@ class Evaluator:
             "75p_cs_score": 0,
             "max_semantic_score": max(semantic_scores),
             "max_cs_score": 0,
-            "target_paper": target_paper[1]
+            "target_paper": target_paper[0]
         }
 
         return combined_scores

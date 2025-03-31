@@ -1,5 +1,6 @@
 
-from psycopg2.extras import execute_values
+# from psycopg2.extras import execute_batch
+# from psycopg2.extras import execute_values
 
 # ======================== SELECTION OPERATIONS ========================
 
@@ -10,6 +11,29 @@ def get_all_paper_ids(db_client):
     """
     cursor = db_client.execute(select_query)
     return cursor.fetchall()
+
+def get_paper_ids_for_testing(db_client):
+    select_query = """
+    SELECT ss_id, clean_title, clean_abstract FROM papers
+    WHERE is_cleaned = True
+    AND is_tested = False
+    ORDER BY RANDOM()
+    LIMIT 100;
+    """
+
+    update_query = """
+    UPDATE papers
+    SET is_tested = True
+    WHERE ss_id = %s;
+    """
+    cursor = db_client.execute(select_query)
+    papers = cursor.fetchall()
+    for paper in papers:
+        ss_id = paper[0]  # Assuming ss_id is the first column
+        db_client.execute(update_query, (ss_id,))
+    db_client.commit()
+    return papers
+
 
 def get_papers_by_ss_ids(db_client, ss_ids):
     select_query = """
@@ -231,20 +255,20 @@ def get_co_citation(db_client, target_ss_id):
 
 # ======================== CITATION SIMILARITY CREATE AND INSERT ========================
 
-def create_citation_similarity_table(db_client):
-    create_query = """
-    CREATE TABLE IF NOT EXISTS citation_similarity(
-        ss_id TEXT NOT NULL,
-        similar_paper TEXT NOT NULL,
-        co_citation_count NUMERIC NOT NULL,
-        bibliographic_coupling_count NUMERIC NOT NULL,
-        PRIMARY KEY (ss_id, similar_paper),
-        FOREIGN KEY (ss_id) REFERENCES papers(ss_id),
-        FOREIGN KEY (similar_paper) REFERENCES papers(ss_id)
-    );
-    """
-    db_client.execute(create_query)
-    return
+# def create_citation_similarity_table(db_client):
+#     create_query = """
+#     CREATE TABLE IF NOT EXISTS citation_similarity(
+#         ss_id TEXT NOT NULL,
+#         similar_paper TEXT NOT NULL,
+#         co_citation_count NUMERIC NOT NULL,
+#         bibliographic_coupling_count NUMERIC NOT NULL,
+#         PRIMARY KEY (ss_id, similar_paper),
+#         FOREIGN KEY (ss_id) REFERENCES papers(ss_id),
+#         FOREIGN KEY (similar_paper) REFERENCES papers(ss_id)
+#     );
+#     """
+#     db_client.execute(create_query)
+#     return
 
 # def batch_insert_citation_similarity(db_client, citation_similarities, chunk_size): # citation_similarities = [(ss_id, similar_paper, co_citation_count, bibliographic_coupling_count), ...]
 #     insert_query = """
@@ -263,34 +287,34 @@ def create_citation_similarity_table(db_client):
 #     return
 
 
-from psycopg2.extras import execute_values
-def batch_insert_citation_similarity(db_client, logger, citation_similarities, chunk_size):
-    insert_query = """
-    INSERT INTO citation_similarity (ss_id, similar_paper, co_citation_count, bibliographic_coupling_count)
-    VALUES %s
-    ON CONFLICT (ss_id, similar_paper) DO NOTHING;
-    """
+# from psycopg2.extras import execute_values
+# def batch_insert_citation_similarity(db_client, logger, citation_similarities, chunk_size):
+#     insert_query = """
+#     INSERT INTO citation_similarity (ss_id, similar_paper, co_citation_count, bibliographic_coupling_count)
+#     VALUES %s
+#     ON CONFLICT (ss_id, similar_paper) DO NOTHING;
+#     """
 
 
-    for i in range(0, len(citation_similarities), chunk_size):
-        chunk = citation_similarities[i:i+chunk_size]
-        print("len(chunk):", len(chunk))    
+#     for i in range(0, len(citation_similarities), chunk_size):
+#         chunk = citation_similarities[i:i+chunk_size]
+#         print("len(chunk):", len(chunk))    
         
-        # Debug: Check the structure of the current chunk
-        print(f"Inserting chunk {i//chunk_size + 1}/{-(-len(citation_similarities)//chunk_size)}: {chunk[:5]}")
-        logger.log_message(f"Inserting chunk {i//chunk_size + 1}/{-(-len(citation_similarities)//chunk_size)}: {chunk[:5]}")
-        # Inserting chunk: [('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e5e85b506969e276487458add9d75fe2d44b9188', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e6a7d2f8818052c0ef5272446654317d44a8a825', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e6e6acbd1067e448848cd48fde6de6c3b0edf82e', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e8aa63ae69334bc33135b0e0dd8066fd768215e9', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'eb8cdb317a51e0cfa913790f966baf988baaf49e', 2.0, 0.0)]
+#         # Debug: Check the structure of the current chunk
+#         print(f"Inserting chunk {i//chunk_size + 1}/{-(-len(citation_similarities)//chunk_size)}: {chunk[:5]}")
+#         logger.log_message(f"Inserting chunk {i//chunk_size + 1}/{-(-len(citation_similarities)//chunk_size)}: {chunk[:5]}")
+#         # Inserting chunk: [('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e5e85b506969e276487458add9d75fe2d44b9188', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e6a7d2f8818052c0ef5272446654317d44a8a825', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e6e6acbd1067e448848cd48fde6de6c3b0edf82e', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'e8aa63ae69334bc33135b0e0dd8066fd768215e9', 2.0, 0.0), ('e31606c0cdb2b2cf1a8c749dd71402053b8f2b12', 'eb8cdb317a51e0cfa913790f966baf988baaf49e', 2.0, 0.0)]
         
-        try:
-            execute_values(db_client.cur, insert_query, chunk)
-            db_client.commit()  # Commit after each chunk insertion
-        except Exception as e:
-            print(f"Error inserting chunk {i//chunk_size + 1}: {e}")
-            logger.log_message(f"Error inserting chunk {i//chunk_size + 1}: {e}")
+#         try:
+#             execute_values(db_client.cur, insert_query, chunk)
+#             db_client.commit()  # Commit after each chunk insertion
+#         except Exception as e:
+#             print(f"Error inserting chunk {i//chunk_size + 1}: {e}")
+#             logger.log_message(f"Error inserting chunk {i//chunk_size + 1}: {e}")
     
-    print("Batch insertion complete.")
-    logger.log_message("Batch insertion complete.")
-    return
+#     print("Batch insertion complete.")
+#     logger.log_message("Batch insertion complete.")
+#     return
 
 
 
@@ -301,6 +325,8 @@ def batch_insert_citation_similarity(db_client, logger, citation_similarities, c
 # ==========================================================
 
 def get_discounted_topics_by_combined_scores_only(db_client, target_ss_id): # returns all the topic-paper edges of the top 5 topics within each category
+    # print("target_ss_id:", target_ss_id)
+    # print("type(target_ss_id):", type(target_ss_id))
     query = """
     WITH RankedTopics AS (
         SELECT
@@ -366,7 +392,7 @@ def get_papers_by_topic_ids(db_client, selected_topic_ids):
         return []
 
     topic_ids_str = ', '.join([str(id) for id in selected_topic_ids])
-    print("topic_ids_str:", topic_ids_str)
+    # print("topic_ids_str:", topic_ids_str)
 
     limit_per_topic = 5
     min_unique_papers_per_topic = 5
@@ -408,7 +434,7 @@ def get_papers_by_topic_ids(db_client, selected_topic_ids):
         cursor = db_client.execute(query)
         results = cursor.fetchall()
 
-        print("length: ",len(results))
+        # print("length: ",len(results))
 
         # Process and store the results
         papers_by_topic = {}
@@ -473,65 +499,65 @@ def get_highest_citation_similarity(db_client, target_ss_id):
 # EVALUATOR OPERATIONS
 # ==========================================================
 
-def create_tested_papers_table():
-    """
-    Create a table to store the tested papers and their similarity scores.
+# def create_tested_papers_table():
+#     """
+#     Create a table to store the tested papers and their similarity scores.
     
-    Parameters:
-    target_paper (str): The ss_id of the tested_paper.
-    results (list): A list of tuples containing the  of the tested papers.
-    """
-    create_query = """
-    CREATE TABLE IF NOT EXISTS tested_papers (
-        id SERIAL PRIMARY KEY,
-        tested_paper TEXT NOT NULL,
-        25p_score_bm25 NUMERIC NOT NULL,
-        50p_score_bm25 NUMERIC NOT NULL,
-        75p_score_bm25 NUMERIC NOT NULL,,
-        max_score_bm25 NUMERIC NOT NULL,
-        25p_score_scibert NUMERIC NOT NULL,
-        50p_score_scibert NUMERIC NOT NULL,
-        75p_score_scibert NUMERIC NOT NULL,
-        max_score_scibert NUMERIC NOT NULL,
-        category TEXT NOT NULL,
-        FOREIGN KEY (tested_paper) REFERENCES papers(ss_id)
-    );
-    """
-    db_client.execute(create_query)
-    return
+#     Parameters:
+#     target_paper (str): The ss_id of the tested_paper.
+#     results (list): A list of tuples containing the  of the tested papers.
+#     """
+#     create_query = """
+#     CREATE TABLE IF NOT EXISTS tested_papers (
+#         id SERIAL PRIMARY KEY,
+#         tested_paper TEXT NOT NULL,
+#         p25p_score_bm25 NUMERIC NOT NULL,
+#         p50p_score_bm25 NUMERIC NOT NULL,
+#         p75p_score_bm25 NUMERIC NOT NULL,
+#         max_score_bm25 NUMERIC NOT NULL,
+#         p25p_score_scibert NUMERIC NOT NULL,
+#         p50p_score_scibert NUMERIC NOT NULL,
+#         p75p_score_scibert NUMERIC NOT NULL,
+#         max_score_scibert NUMERIC NOT NULL,
+#         category TEXT NOT NULL,
+#         FOREIGN KEY (tested_paper) REFERENCES papers(ss_id)
+#     );
+#     """
+#     db_client.execute(create_query)
+#     return
 
-def batch_insert_bm25_results(target_paper, results): 
-    """    
-    # results = [(
-        tested_paper,
-        25p_semantic_score,
-        50p_semantic_score,
-        75p_semantic_score,
-        average_semantic_score,
-        25p_cs_score, 
-        50p_cs_score,
-        75p_cs_score,
-        average_cs_score), ...]
-    """
-    insert_query = """
-    INSERT INTO tested_papers (
-        tested_paper,
-        25p_semantic_score,
-        50p_semantic_score,
-        75p_semantic_score,
-        average_semantic_score,
-        25p_cs_score, 
-        50p_cs_score,
-        75p_cs_score,
-        average_cs_score
-    )
-    VALUES %s
-    ON CONFLICT (tested_paper) DO NOTHING;
-    """
+# def batch_insert_bm25_results(target_paper, results): 
+#     """    
+#     # results = [(
+#         tested_paper,
+#         25p_semantic_score,
+#         50p_semantic_score,
+#         75p_semantic_score,
+#         average_semantic_score,
+#         25p_cs_score, 
+#         50p_cs_score,
+#         75p_cs_score,
+#         average_cs_score), ...]
+#     """
+#     insert_query = """
+#     INSERT INTO tested_papers (
+#         tested_paper,
+#         25p_semantic_score,
+#         50p_semantic_score,
+#         75p_semantic_score,
+#         average_semantic_score,
+#         25p_cs_score, 
+#         50p_cs_score,
+#         75p_cs_score,
+#         average_cs_score
+#     )
+#     VALUES %s
+#     ON CONFLICT (tested_paper) DO NOTHING;
+#     """
     
-    data = [(target_paper, *paper) for paper in results]
+#     data = [(target_paper, *paper) for paper in results]
     
-    # Insert the data
-    execute_values(db_client.cur, insert_query, data)
-    db_client.commit()
-    return
+#     # Insert the data
+#     execute_values(db_client.cur, insert_query, data)
+#     db_client.commit()
+#     return

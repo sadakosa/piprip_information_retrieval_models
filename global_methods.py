@@ -73,12 +73,12 @@ import pandas as pd
 def save_to_csv(df, file_name, folder_name):
     file_path = './resources/' + folder_name + '/' + file_name + '.csv'
     df.to_csv(file_path, index=False)
-    print(f"DataFrame saved to {file_path}")
+    # print(f"DataFrame saved to {file_path}")
 
 def load_from_csv(file_name, folder_name):
     file_path = './resources/' + folder_name + '/' + file_name + '.csv'
     df = pd.read_csv(file_path)
-    print(f"DataFrame loaded from {file_path}")
+    # print(f"DataFrame loaded from {file_path}")
     
     return df
 
