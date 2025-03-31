@@ -1,5 +1,10 @@
 # information_retrieval_models
 
+## Purpose
+For search and evaluation
+1. Search - citation similarity and semantic similarity
+2. Evaluation 
+
 ## Set Up
 1. config/config.yaml
 2. resources/results
